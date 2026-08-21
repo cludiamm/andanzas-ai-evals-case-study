@@ -10,6 +10,8 @@ from deepeval.metrics import GEval
 from deepeval.test_case import SingleTurnParams
 from deepeval.models import AnthropicModel, GeminiModel
 
+from must_visit_metric import MustVisitMetric
+
 load_dotenv()
 
 # The judge is pinned to an explicit version on purpose: if the judge drifts,
@@ -49,10 +51,21 @@ elif judge_provider == "anthropic":
 else:
     raise RuntimeError(f"Unknown JUDGE_PROVIDER={judge_provider!r}; expected 'gemini' or 'anthropic'.")
 
-# Define GEval using the configured judge model
+# Define GEval using the configured judge model.
+#
+# Must-visit preservation is judged deterministically by MustVisitMetric
+# below, not here — asking the LLM judge to also weigh in on it would let
+# the two mechanisms disagree with no clear tie-breaker. GEval's criteria is
+# scoped to what's left: opening-hours plausibility, pacing/fatigue balance,
+# and the collaborative Co-Admin tone (propose, don't unilaterally cut).
 correctness_metric = GEval(
     name="Itinerary Correctness",
-    criteria="Determine if the actual itinerary respects opening hours and must-visit preferences.",
+    criteria=(
+        "Determine if the actual itinerary respects venue opening hours, "
+        "keeps a balanced pace (avoiding overly exhausting days), and "
+        "maintains a collaborative Co-Admin tone that proposes options "
+        "rather than unilaterally cutting items."
+    ),
     evaluation_params=[
         SingleTurnParams.INPUT,
         SingleTurnParams.ACTUAL_OUTPUT,
@@ -62,7 +75,22 @@ correctness_metric = GEval(
 )
 
 DATASET_PATH = Path(__file__).resolve().parent.parent / "data" / "golden_dataset.json"
-ACTUAL_OUTPUTS_PATH = Path(__file__).resolve().parent.parent / "data" / "actual_outputs.json"
+
+# ITINERARY_VARIANT picks which fixture set generate_actual_output() reads
+# from, so the baseline (Phase 1) and optimized/hybrid (Phase 2) sweeps stay
+# independently reproducible instead of overwriting each other.
+#   baseline  -> data/actual_outputs.json      (zero-shot, no system prompt)
+#   optimized -> data/optimized_outputs.json   (prompts/system_prompt_v2.md)
+OUTPUTS_PATHS = {
+    "baseline": Path(__file__).resolve().parent.parent / "data" / "actual_outputs.json",
+    "optimized": Path(__file__).resolve().parent.parent / "data" / "optimized_outputs.json",
+}
+itinerary_variant = os.getenv("ITINERARY_VARIANT", "baseline").lower()
+if itinerary_variant not in OUTPUTS_PATHS:
+    raise RuntimeError(
+        f"Unknown ITINERARY_VARIANT={itinerary_variant!r}; expected one of {sorted(OUTPUTS_PATHS)}."
+    )
+ACTUAL_OUTPUTS_PATH = OUTPUTS_PATHS[itinerary_variant]
 
 def load_golden_dataset():
     with open(DATASET_PATH, encoding="utf-8") as f:
@@ -79,13 +107,19 @@ actual_outputs = load_actual_outputs()
 def generate_actual_output(case: dict) -> str:
     # PLACEHOLDER: swap this for a real call to Andanzas (or the model under
     # test) using case["input_user_request"]. Until that's wired up, this
-    # pulls from data/actual_outputs.json — a fixture set of independently
-    # drafted itineraries (not the ground truth) so the judge has real work
-    # to do.
+    # pulls from the fixture set selected by ITINERARY_VARIANT above.
     test_case_id = case["test_case_id"]
     if test_case_id not in actual_outputs:
         raise KeyError(f"No actual_output fixture for {test_case_id!r} in {ACTUAL_OUTPUTS_PATH}")
     return actual_outputs[test_case_id]
+
+
+def build_must_visit_metric(case: dict) -> MustVisitMetric:
+    check = case["constraints"]["must_visit_check"]
+    return MustVisitMetric(
+        keywords=check["keywords"],
+        required_min_distinct_days=check["required_min_distinct_days"],
+    )
 
 
 @pytest.mark.parametrize(
@@ -99,4 +133,5 @@ def test_itinerary_eval(case):
         actual_output=generate_actual_output(case),
         expected_output=case["expected_output_ground_truth"]
     )
-    assert_test(test_case, [correctness_metric])
+    must_visit_metric = build_must_visit_metric(case)
+    assert_test(test_case, [correctness_metric, must_visit_metric])

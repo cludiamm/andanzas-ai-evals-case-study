@@ -5,6 +5,10 @@
     "input_user_request": "Plan a 21-day trip for a group of 7 travellers (22 Sep – 15 Oct 2023) covering South Korea (Busan, Seoul) and Japan (Hiroshima/Miyajima, Osaka, Kyoto, Sapporo, Tokyo). The group voted every candidate activity 1–5 and only the highest-scoring items should survive. The absolute anchor is a 2-day pass to Universal Studios Japan in Osaka, which the whole group rated 5/5. Travel inside Japan must be routed on a JR Pass wherever possible. Base each city block on a pre-booked Airbnb, and respect intercity flights and the Korea-to-Japan hop. Keep culture-heavy days balanced against the gaming/anime days the younger travellers voted for.",
     "constraints": {
       "must_visit_location": "Universal Studios Japan (Osaka) — 2-day pass, unanimous 5/5 vote",
+      "must_visit_check": {
+        "keywords": ["Universal Studios Japan"],
+        "required_min_distinct_days": 2
+      },
       "max_museums_per_day": 2,
       "specific_hard_bounds": [
         "Universal Studios Japan 2-day pass booked for 04–05 Oct 2023, park entry at 07:30 both days (confirmation 4854221679)",
@@ -38,6 +42,10 @@
     "input_user_request": "Plan a 93-day solo trip (29 Mar – 29 Jun 2025) across 16 European bases: Madrid, Lisbon, Sintra, Porto, Bordeaux, Bruges, Ghent, Edinburgh, London, Cologne, Prague, Vienna, Salzburg, Plitvice, Split and Dubrovnik. I am travelling alone on a tight budget, cooking most meals from supermarkets, and I want each city block anchored by pre-purchased timed-entry tickets so nothing is lost to sold-out days. The non-negotiable anchor of the whole trip is Sintra — I want the full palace circuit, not a day trip. Respect European closing days (many monuments close Mondays or Tuesdays), keep at most two paid museums or interiors per day so I don't burn out over three months, and make sure each city's departure day leaves enough slack for the intercity train or flight.",
     "constraints": {
       "must_visit_location": "Palácio Nacional da Pena, Sintra (the full 4-day Sintra palace circuit, 10–13 Apr 2025)",
+      "must_visit_check": {
+        "keywords": ["Sintra"],
+        "required_min_distinct_days": 4
+      },
       "max_museums_per_day": 2,
       "specific_hard_bounds": [
         "Museo Reina Sofía (Madrid) is closed every Tuesday; booked slot 03 Apr 2025 at 11:30 (loc. 76834084)",
@@ -82,6 +90,10 @@
     "input_user_request": "Plan a 26-day trip (19 Sep – 14 Oct 2019) for a group of 6 travellers who voted on candidate cities, covering Venice, Athens, the Cyclades island chain, Budapest, Kraków, Rome, Zagreb/Plitvice and Paris. The group's top-voted destination is Venice (22/25) and the strongest single-country pull is Greece, so the Cyclades island-hopping segment is the spine of the trip: Santorini, Milos, Naxos and Mykonos in four consecutive days, each connected by a morning ferry. Ferries are the binding constraint — most tickets must be collected in person at a local travel agency before boarding, and there is exactly one sailing per day on several of these legs. Budget is shared and low, so several intercity moves are overnight buses to save a night of lodging.",
     "constraints": {
       "must_visit_location": "Cyclades island chain — Santorini → Milos → Naxos → Mykonos, four consecutive one-night stays (25–29 Sep 2019)",
+      "must_visit_check": {
+        "keywords": ["Santorini", "Milos", "Naxos", "Mykonos"],
+        "required_min_distinct_days": 4
+      },
       "max_museums_per_day": 2,
       "specific_hard_bounds": [
         "Overnight ferry Piraeus (Athens) → Thira (Santorini) departs strictly 20:30 on 24 Sep and arrives 05:30 on 25 Sep; physical tickets must be collected at the Piraeus port office before boarding",
